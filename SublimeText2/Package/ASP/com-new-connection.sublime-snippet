@@ -1,0 +1,8 @@
+<snippet>
+	<content><![CDATA[
+Dim ${1:objConn} : Set ${1:objConn} = Server.createObject("Scripting.ADODB.connection")$0
+]]></content>
+	<tabTrigger>com-new-connection</tabTrigger>
+	<scope>source.asp</scope>
+	<description>COM Object - New ADODB Connection</description>
+</snippet>

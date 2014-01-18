@@ -1,0 +1,8 @@
+<snippet>
+	<content><![CDATA[
+Response.Clear$0
+]]></content>
+	<tabTrigger>clear</tabTrigger>
+	<scope>source.asp</scope>
+	<description>Response.Clear</description>
+</snippet>

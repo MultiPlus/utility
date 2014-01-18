@@ -1,0 +1,10 @@
+<snippet>
+	<content><![CDATA[
+Do
+	$0
+Loop While ${1:statement}
+]]></content>
+	<tabTrigger>do</tabTrigger>
+	<scope>source.asp</scope>
+	<description>Do Loop While</description>
+</snippet>

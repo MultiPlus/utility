@@ -1,0 +1,8 @@
+<snippet>
+	<content><![CDATA[
+Dim ${2:var} : Set ${2:var} = $1$0
+]]></content>
+	<tabTrigger>dimset</tabTrigger>
+	<scope>source.asp</scope>
+	<description>COM Object - New Dictionary</description>
+</snippet>

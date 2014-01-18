@@ -1,0 +1,10 @@
+<snippet>
+	<content><![CDATA[
+Do
+	$0
+Loop Until ${1:statement}
+]]></content>
+	<tabTrigger>do</tabTrigger>
+	<scope>source.asp</scope>
+	<description>Do Loop Until</description>
+</snippet>

@@ -1,0 +1,13 @@
+<snippet>
+	<content><![CDATA[
+Select Case ${1:var}
+	Case ${2:case}
+		$3
+	Case Else
+		$0
+End Select
+]]></content>
+	<tabTrigger>select-case</tabTrigger>
+	<scope>source.asp</scope>
+	<description>Select Case</description>
+</snippet>

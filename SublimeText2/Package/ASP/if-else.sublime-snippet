@@ -1,0 +1,12 @@
+<snippet>
+    <tabTrigger>if</tabTrigger>
+    <scope>source.asp</scope>
+    <description>If Condition</description>
+    <content><![CDATA[
+If ${2:True} Then
+	$1
+Else
+	$0
+End If
+]]></content>
+</snippet>

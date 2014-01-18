@@ -1,0 +1,8 @@
+<snippet>
+	<content><![CDATA[
+Response.Write "<span>DEBUG: " & ${2:debug message} & "</span>"$0
+]]></content>
+	<tabTrigger>debug</tabTrigger>
+	<scope>source.asp</scope>
+	<description>Response.Write DEBUG</description>
+</snippet>

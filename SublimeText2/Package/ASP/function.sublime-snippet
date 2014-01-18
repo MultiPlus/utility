@@ -1,0 +1,10 @@
+<snippet>
+	<content><![CDATA[
+Function $1 ${2:($3)}
+	$0
+End Function
+]]></content>
+	<tabTrigger>function</tabTrigger>
+	<scope>source.asp</scope>
+	<description>Function</description>
+</snippet>

@@ -1,0 +1,20 @@
+<snippet>
+	<content><![CDATA[
+Class ${1:${TM_FILENAME/(.*?)(\..+)/$1/}}
+
+	Private Sub Class_Initialize
+		' Called automatically when class is created
+	End Sub
+
+	Private Sub Class_Terminate
+		' Called automatically when all references to class instance are removed
+	End Sub
+
+	$0
+
+End Class
+]]></content>
+	<tabTrigger>class</tabTrigger>
+	<scope>source.asp</scope>
+	<description>Class</description>
+</snippet>

@@ -1,0 +1,8 @@
+<snippet>
+	<content><![CDATA[
+Dim ${1:lst} : Set ${1:lst} = Server.createObject("Scripting.Dictionary")$0
+]]></content>
+	<tabTrigger>com-new-dictionary</tabTrigger>
+	<scope>source.asp</scope>
+	<description>COM Object - New Dictionary</description>
+</snippet>

@@ -1,0 +1,10 @@
+<snippet>
+	<content><![CDATA[
+For ${1:i}=$2 To $3
+	$0
+Next
+]]></content>
+	<tabTrigger>for</tabTrigger>
+	<scope>source.asp</scope>
+	<description>For Loop</description>
+</snippet>
