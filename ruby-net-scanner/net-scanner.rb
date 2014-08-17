@@ -17,7 +17,7 @@ def getInterfaces
 		    interfaces.push(interface)
 		end
 
-		#======= Parse command 'ipconfig'
+		##======= Parse command 'ipconfig'
 		#interfaces = Array.new
 		#`ipconfig`.split(" :\n").each{|connection|
 		#	info = connection.split("\n")
@@ -65,7 +65,7 @@ def scanNet
 		#Wait End of all Threads to continue
 		threads.each{|t|t.join}
 
-		results = results.reject {|k,v| !v[:ping]}
+		results = results.reject{|k,v| !v[:ping]}
 
 		puts "You have actualy #{results.count} device(s) with a IP on your network: "
 		results.each{|ip, info|
@@ -78,9 +78,7 @@ end
 
 def getInfoFromIp(ip)
 	info = Hash.new
-	#gem install net-ping
-	require 'net/ping'
-	count = 1 #Stop after sending count ECHO_REQUEST packets. With deadline option, ping waits for count ECHO_REPLY packets, until the timeout expires. 
+	count = 1 	#Stop after sending count ECHO_REQUEST packets. With deadline option, ping waits for count ECHO_REPLY packets, until the timeout expires. 
 	timeout = 1 #Time to wait for a response, in seconds. The option affects only timeout in absense of any responses, otherwise ping waits for two RTTs.
 	if OS.windows?
 		info[:ping] = system("ping -w #{timeout} -n #{count} #{ip}",
@@ -91,7 +89,6 @@ def getInfoFromIp(ip)
                    [:err, :out] => "/dev/null")
 	end
 	if info[:ping]
-		# Finding name for given IP and catch "no name" error
 		require 'resolv'
 		info[:name] = Resolv.getname(ip) rescue nil
 	end
