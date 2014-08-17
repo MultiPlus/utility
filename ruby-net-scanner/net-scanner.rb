@@ -51,7 +51,7 @@ def scanNet
 		}
 
 		# Exec. all threads
-		threads_list.each{|t|
+		threads.each{|t|
 			t.join
 		}
 	}
