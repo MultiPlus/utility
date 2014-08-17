@@ -44,8 +44,15 @@ def scanNet
 
 		require 'resolv'
 
+		# Create and push threads into thread array
+		threads = Array.new
 		range.each{|ip|
-				getInfoFromIp(ip.to_s)
+				threads.push(Thread.new{getInfoFromIp(ip.to_s)})
+		}
+
+		# Exec. all threads
+		threads_list.each{|t|
+			t.join
 		}
 	}
 end
@@ -69,8 +76,6 @@ def getInfoFromIp(ip)
 		else
 			puts "Successfull ping ip #{ip} (Resolved name: #{name})"
 		end
-	else
-		puts "Failed ping ip #{ip}"
 	end
 end
 
