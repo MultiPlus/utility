@@ -42,8 +42,10 @@ def scanNet
 		range.pop #Delete last IP broadcast (No valid)
 		puts "Scan local network for #{range.first} to #{range.last}:"
 
+		require 'resolv'
+
 		range.each{|ip|
-			getInfoFromIp(ip)
+				getInfoFromIp(ip.to_s)
 		}
 	}
 end
@@ -51,11 +53,22 @@ end
 def getInfoFromIp(ip)
 	#gem install net-ping
 	require 'net/ping'
-	pingOk = Net::Ping::WMI.new(ip).ping?
+	if OS.windows?
+		pingOk = Net::Ping::WMI.new(ip).ping?
+	elsif OS.linux?
+		pingOk = system("ping -q -W 1 -c 1 #{ip}",
+                   [:err, :out] => "/dev/null")
+	end
 	if pingOk
-		require 'Resolv'
-		name = Resolv.getname(ip)
-		puts "Successfull ping ip #{ip} (Resolved name: #{name})"
+		# Finding name for given IP and catch "no name" error
+		require 'resolv'
+		begin
+			name = Resolv.getname(ip)
+		rescue Resolv::ResolvError => error_txt
+			puts "Successfull ping ip #{ip} (Resolved name: #{error_txt})"
+		else
+			puts "Successfull ping ip #{ip} (Resolved name: #{name})"
+		end
 	else
 		puts "Failed ping ip #{ip}"
 	end
@@ -63,6 +76,5 @@ end
 
 def main
 	scanNet()
-	#getInfoFromIp('192.168.0.175')
 end
 main()
