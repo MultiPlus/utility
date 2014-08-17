@@ -29,7 +29,7 @@ def getInterfaces
 		#		interfaces.push(interface)
 		#	end
 		#}
-		
+
 	#On linux get interfaces informations with command 'ip' and parse result
 	elsif OS.linux?
 		`ip -o addr show | grep -v ": lo" | awk '/inet/ {print $4}'`.split("\n").each{|connection|
@@ -51,46 +51,51 @@ def scanNet
 
 		range = interface.to_range().to_a
 		range.shift #delete first IP (0.0) (No valid)
-		range.pop #Delete last IP broadcast (No valid)
+		range.pop 	#Delete last IP broadcast (No valid)
 		puts "Scan local network for #{range.first} to #{range.last}:"
 
-		# Create and push threads into thread array
+		#Create a thread by ping/ip
+		results = Hash.new
 		threads = Array.new
 		range.each{|ip|
-			threads.push(Thread.new{getInfoFromIp(ip.to_s)})
+			threads.push(Thread.new{
+				results[ip.to_s] = getInfoFromIp(ip.to_s)
+			})
 		}
+		#Wait End of all Threads to continue
+		threads.each{|t|t.join}
 
-		# Exec. all threads
-		threads.each{|t|
-			t.join
+		results = results.reject {|k,v| !v[:ping]}
+
+		puts "You have actualy #{results.count} device(s) with a IP on your network: "
+		results.each{|ip, info|
+			if info[:ping]
+				puts "\t- #{ip} [#{info[:name]}]"
+			end
 		}
 	}
 end
 
 def getInfoFromIp(ip)
+	info = Hash.new
 	#gem install net-ping
 	require 'net/ping'
 	count = 1 #Stop after sending count ECHO_REQUEST packets. With deadline option, ping waits for count ECHO_REPLY packets, until the timeout expires. 
 	timeout = 1 #Time to wait for a response, in seconds. The option affects only timeout in absense of any responses, otherwise ping waits for two RTTs.
 	if OS.windows?
-		pingOk = system("ping -w #{timeout} -n #{count} #{ip}",
+		info[:ping] = system("ping -w #{timeout} -n #{count} #{ip}",
                    [:err, :out] => "NUL")
 	elsif OS.linux?
 		#-q: Quiet output. Nothing is displayed except the summary lines at startup time and when finished. 
-		pingOk = system("ping -q -W #{timeout} -c #{count} #{ip}",
+		info[:ping] = system("ping -q -W #{timeout} -c #{count} #{ip}",
                    [:err, :out] => "/dev/null")
 	end
-	if pingOk
+	if info[:ping]
 		# Finding name for given IP and catch "no name" error
 		require 'resolv'
-		begin
-			name = Resolv.getname(ip)
-		rescue Resolv::ResolvError => error_txt
-			puts "Successfull ping ip #{ip} (Resolved name: #{error_txt})"
-		else
-			puts "Successfull ping ip #{ip} (Resolved name: #{name})"
-		end
+		info[:name] = Resolv.getname(ip) rescue nil
 	end
+	return info
 end
 
 def main
