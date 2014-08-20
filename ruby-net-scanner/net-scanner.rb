@@ -1,4 +1,5 @@
 require_relative 'mod-OS'
+require 'ipaddr'
 
 def getInterfaces
 	interfaces = Array.new
@@ -11,9 +12,7 @@ def getInterfaces
 		#http://msdn.microsoft.com/en-us/library/aa394217%28v=vs.85%29.aspx
 		connections = wmi.ExecQuery("SELECT * FROM Win32_NetworkAdapterConfiguration Where IPEnabled = True")
 		for connection in connections do
-			interface = Hash.new
-			interface[:ip] = connection.IPAddress.first
-			interface[:mask] = connection.IPSubnet.first
+			interface = IPAddr.new "#{connection.IPAddress.first}/#{connection.IPSubnet.first}"
 		    interfaces.push(interface)
 		end
 
@@ -33,9 +32,7 @@ def getInterfaces
 	#On linux get interfaces informations with command 'ip' and parse result
 	elsif OS.linux?
 		`ip -o addr show | grep -v ": lo" | awk '/inet/ {print $4}'`.split("\n").each{|connection|
-			interface = Hash.new
-			interface[:ip] = connection.split("/")[0]
-			interface[:mask] = connection.split("/")[1]
+			interface = IPAddr.new connection
 		    interfaces.push(interface)
 		}
 	end
@@ -44,12 +41,8 @@ end
 
 def scanNet
 	interfaces = getInterfaces()
-	require 'ipaddr'
 	interfaces.each{|i|
-		interface = IPAddr.new i[:ip]
-		interface = interface.mask(i[:mask])
-
-		range = interface.to_range().to_a
+		range = i.to_range().to_a
 		range.shift #delete first IP (0.0) (No valid)
 		range.pop 	#Delete last IP broadcast (No valid)
 		puts "Scan local network for #{range.first} to #{range.last}:"
