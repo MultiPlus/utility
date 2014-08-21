@@ -1,20 +1,25 @@
+require 'ipaddr'
+
 module Network
     class Interface
         attr_accessor  :ipv4, :ipv6, :mac, :mask, :gateway
 
         def initialize(params = {})
             if (params[:ipv4].count('/') == 1)
-                params[:ipv4], params[:mask] = params[:ipv4].split('/')
+                i = IPAddr.new(params[:ipv4])
+            else
+                i = IPAddr.new("#{params[:ipv4]}/#{params[:mask]}")
             end
+
             raise(ArgumentError, 'Argument ipv4 must be a valid IP V4 address.') if !isValideIPv4(params[:ipv4]) 
             raise(ArgumentError, 'Argument ipv6 must be a valid IP V6 address.') if !params[:ipv6].nil? && !isValideIPv6(params[:ipv6])
-            raise(ArgumentError, 'Argument mac must be a valid MAC address (Tolered delimiter .,:,-).') if !isValideMAC(params[:mac])
+            raise(ArgumentError, 'Argument mac must be a valid MAC address (Tolered delimiter :,-).') if !isValideMAC(params[:mac])
 
-            @ipv4       = params.fetch(:ipv4, nil)
-            @ipv6       = params.fetch(:ipv6, nil)
-            @mac        = params.fetch(:mac, nil)
-            @mask       = params.fetch(:mask, nil)
-            @gateway    = params.fetch(:gateway, nil)
+            @ipv4       = i.to_s
+            @ipv6       = params[:ipv6]
+            @mac        = params[:mac]
+            @mask       = params[:mask]
+            @gateway    = params[:gateway]
         end
 
         def isValideIPv4(ipv4)
@@ -27,6 +32,10 @@ module Network
 
         def isValideMAC(mac)
             return (mac =~ /^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$/)
+        end
+
+        def IPtoCIDR(ip)
+            return ip.split(".").collect!{|i|i.to_i.to_s(2)}.join().count('1')
         end
 
         def getOnWindowsWMI
