@@ -32,7 +32,6 @@ module Network
         #================================== SETTER ==================================#
 
             def ipv4=(ipv4)
-                puts "init ipv4"
                 raise(ArgumentError, 'Argument ipv4 must be a valid IP V4 address.') if !Interface.isValideIPv4(ipv4)
                 @ipv4 = ipv4
             end
