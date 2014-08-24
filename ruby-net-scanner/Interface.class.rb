@@ -53,7 +53,7 @@ module Network
 
             def mask=(mask)
                 if (mask.is_a? Integer)
-                    raise(ArgumentError, 'Argument mask must be a valid ICDR mask.') if !Interface.isValidIPv4Mask(mask)
+                    raise(ArgumentError, 'Argument mask must be a valid ICDR mask.') if (mask<0 || mask>32)
                     @mask_icdr = mask
                     @mask_ip = Interface.CIDRtoIP(mask)
                 else
@@ -81,22 +81,23 @@ module Network
 
             #Valide a string is a IPv4 format
             def self.isValideIPv4(ipv4)
-                return (ipv4 =~ /^([0-9]{1,3}\.){3}([0-9]{1,3})$/)
+                #return (ipv4 =~ /^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.([01]?\\d\\d?|2[0-4]\\d|25[0-5])$/)==0
+                return ipv4.split(".").collect!{|b| ( (b==b.to_i.to_s) && (b.to_i>=0 && b.to_i<=255) ) ? 1 : 0 }.join().eql?("1111")
             end
 
             #Valide a string is a IPv6 format
             def self.isValideIPv6(ipv6)
-                return (ipv6 =~ /^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(([0-9A-Fa-f]{1,4}:){0,5}:((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(::([0-9A-Fa-f]{1,4}:){0,5}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))$/)
+                return (ipv6 =~ /^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(([0-9A-Fa-f]{1,4}:){0,5}:((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(::([0-9A-Fa-f]{1,4}:){0,5}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))$/)==0
             end
 
             #Valide a string is a IPv4 Mask format
             def self.isValidIPv4Mask(mask)
-                return mask.split(".").collect!{|i|i.to_i.to_s(2)}.join().index('01').nil? && Interface.isValideIPv4(mask)
+                return mask.split(".").collect!{|i| i.to_i.to_s(2)}.join().index('01').nil? && Interface.isValideIPv4(mask)
             end
 
             #Valide a string is a MAC format
             def self.isValideMAC(mac)
-                return (mac =~ /^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$/)
+                return (mac =~ /^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$/)==0
             end
 
         #================ METHODS ==================
@@ -114,6 +115,7 @@ module Network
         #================ DATA ACCESS ==================
 
             def getOnWindowsWMI
+                #TODO - Get newtwork nterfaces from WMI (On Windows)
         	end
     end
 end
