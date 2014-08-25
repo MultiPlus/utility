@@ -39,5 +39,18 @@ module Network
 			assert(!Interface.isValideIPv4("555.181.185.120") )
 			assert(!Interface.isValideIPv4("010.181.185.120") )
 		end
+		def test_ipv6
+			assert(Interface.isValideIPv6("2001:0db8:0000:85a3:0000:0000:ac1f:8001") )
+			assert(!Interface.isValideIPv6("no_ip") )
+			assert(!Interface.isValideIPv6("192.168.0.1") )
+			assert(!Interface.isValideIPv6("010.181.185.120") )
+		end
+		def test_mac
+			assert(Interface.isValideMAC("FF:FF:FF:FF:FF:FF") ) #Broadcast address
+			assert(Interface.isValideMAC("01:00:0C:CC:CC:CC") ) #Cisco Discovery Protocol
+			assert(Interface.isValideMAC("01:80:C2:00:00:00") ) #Spanning Tree Protocol 
+			assert(!Interface.isValideMAC("foobar") )
+			assert(!Interface.isValideMAC("GG:GG:GG:GG:GG:GG") )
+		end
 	end
 end
