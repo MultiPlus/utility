@@ -12,8 +12,8 @@ module Network
    #    http://rdoc.sourceforge.net/doc/index.html
 
     class Interface
-        MASK_IP = 1
-        MASK_ICDR = 2
+        @@MASK_IP = 1
+        @@MASK_ICDR = 2
 
         attr_accessor :ipv4, :ipv6, :mac, :mask_ip, :mask_icdr, :gateway
 
@@ -32,22 +32,22 @@ module Network
         #================================== SETTER ==================================#
 
             def ipv4=(ipv4)
-                raise(ArgumentError, 'Argument ipv4 must be a valid IP V4 address.') if !Interface.isValideIPv4(ipv4)
+                raise(ArgumentError, 'Argument ipv4 must be a valid IP V4 address.') if !Interface.ipv4?(ipv4)
                 @ipv4 = ipv4
             end
 
             def ipv6=(ipv6)
-                raise(ArgumentError, 'Argument ipv6 must be a valid IP V6 address.') if !Interface.isValideIPv6(ipv6)
+                raise(ArgumentError, 'Argument ipv6 must be a valid IP V6 address.') if !Interface.ipv6?(ipv6)
                 @ipv6 = ipv6
             end if
 
             def mac=(mac)
-                raise(ArgumentError, 'Argument mac must be a valid MAC address (Tolered delimiter :,-).') if !Interface.isValideMAC(mac)
+                raise(ArgumentError, 'Argument mac must be a valid MAC address (Tolered delimiter :,-).') if !Interface.mac?(mac)
                 @ipv6 = ipv6
             end
 
             def gateway=(gateway)
-                raise(ArgumentError, 'Argument gateway must be a valid IP V4 address.') if !Interface.isValideIPv4(gateway)
+                raise(ArgumentError, 'Argument gateway must be a valid IP V4 address.') if !Interface.ipv4?(gateway)
                 @gateway = gateway
             end
 
@@ -80,23 +80,22 @@ module Network
         #================ VALIDATOR ==================
 
             #Valide a string is a IPv4 format
-            def self.isValideIPv4(ipv4)
-                #return (ipv4 =~ /^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.([01]?\\d\\d?|2[0-4]\\d|25[0-5])$/)==0
-                return ipv4.split(".").collect!{|b| ( (b==b.to_i.to_s) && (b.to_i>=0 && b.to_i<=255) ) ? 1 : 0 }.join().eql?("1111")
+            def self.ipv4?(ipv4)
+                return (ipv4 =~ /^(([01]?\d\d?|2[0-4]\d|25[0-5])\.){3}([01]?\d\d?|2[0-4]\d|25[0-5])$/
             end
 
             #Valide a string is a IPv6 format
-            def self.isValideIPv6(ipv6)
+            def self.ipv6?(ipv6)
                 return (ipv6 =~ /^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(([0-9A-Fa-f]{1,4}:){0,5}:((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(::([0-9A-Fa-f]{1,4}:){0,5}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))$/)==0
             end
 
             #Valide a string is a IPv4 Mask format
             def self.isValidIPv4Mask(mask)
-                return mask.split(".").collect!{|i| i.to_i.to_s(2)}.join().index('01').nil? && Interface.isValideIPv4(mask)
+                return mask.split(".").collect!{|i| i.to_i.to_s(2)}.join().index('01').nil? && Interface.ipv4?(mask)
             end
 
             #Valide a string is a MAC format
-            def self.isValideMAC(mac)
+            def self.mac?(mac)
                 return (mac =~ /^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$/)==0
             end
 
