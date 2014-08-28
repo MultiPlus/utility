@@ -12,7 +12,7 @@ module Network
    #    http://rdoc.sourceforge.net/doc/index.html
 
     class Interface
-        @@MASK_IP = 1
+        @@MASK_IP   = 1
         @@MASK_ICDR = 2
 
         attr_accessor :ipv4, :ipv6, :mac, :mask_ip, :mask_icdr, :gateway
@@ -53,13 +53,13 @@ module Network
 
             def mask=(mask)
                 if (mask.is_a? Integer)
-                    raise(ArgumentError, 'Argument mask must be a valid ICDR mask.') if (mask<0 || mask>32)
+                    raise(ArgumentError, 'Argument mask must be a valid ICDR mask.') if !Interface.mask?(mask, Interface.MASK_ICDR)
                     @mask_icdr = mask
-                    @mask_ip = Interface.CIDRtoIP(mask)
+                    @mask_ip = Interface.cidr_to_ip(mask)
                 else
-                    raise(ArgumentError, 'Argument mask must be a valid IP V4 mask.') if !Interface.isValidIPv4Mask(mask)
+                    raise(ArgumentError, 'Argument mask must be a valid IP V4 mask.') if !Interface.mask?(mask)
                     @mask_ip = mask
-                    @mask_icdr = Interface.IPtoCIDR(mask)
+                    @mask_icdr = Interface.ip_to_cidr(mask)
                 end
             end
 
@@ -81,17 +81,23 @@ module Network
 
             #Valide a string is a IPv4 format
             def self.ipv4?(ipv4)
-                return (ipv4 =~ /^(([01]?\d\d?|2[0-4]\d|25[0-5])\.){3}([01]?\d\d?|2[0-4]\d|25[0-5])$/
+                return (ipv4 =~ /^(([01]?\d\d?|2[0-4]\d|25[0-5])\.){3}([01]?\d\d?|2[0-4]\d|25[0-5])$/)==0
             end
 
             #Valide a string is a IPv6 format
             def self.ipv6?(ipv6)
-                return (ipv6 =~ /^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(([0-9A-Fa-f]{1,4}:){0,5}:((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(::([0-9A-Fa-f]{1,4}:){0,5}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))$/)==0
+                return (ipv6 =~ /^(((?=.*(::))(?!.*\3.+\3))\3?|[\dA-F]{1,4}:)([\dA-F]{1,4}(\3|:\b)|\2){5}(([\dA-F]{1,4}(\3|:\b|$)|\2){2}|(((2[0-4]|1\d|[1-9])?\d|25[0-5])\.?\b){4})$/i)==0
             end
 
             #Valide a string is a IPv4 Mask format
-            def self.isValidIPv4Mask(mask)
-                return mask.split(".").collect!{|i| i.to_i.to_s(2)}.join().index('01').nil? && Interface.ipv4?(mask)
+            def self.mask?(mask, type = MASK_IP)
+                case :type
+                    when MASK_IP
+                         return Interface.ipv4?(mask) && mask.split(".").collect!{|i| i.to_i.to_s(2)}.join().index('01').nil?
+                    else
+                        return (mask<1 || mask>32)
+                end
+               
             end
 
             #Valide a string is a MAC format
@@ -102,19 +108,13 @@ module Network
         #================ METHODS ==================
 
             #Convert a mask IP to CIDR format (255.255.255.0 => 24)
-            def self.IPtoCIDR(ip)
+            def self.ip_to_cidr(ip)
                 return ip.split(".").collect!{|i|i.to_i.to_s(2)}.join().count('1')
             end
 
             #Convert a mask CIDR IP to  format (24 => 255.255.255.0)
-            def self.CIDRtoIP(cidr)
-                return "".ljust(cidr, "1").ljust(32, "0").match(/([0-1]{8})([0-1]{8})([0-1]{8})([0-1]{8})/)[1..4].collect!{|b| b.to_i(2).to_s}.join(".")
+            def self.cidr_to_ip(cidr)
+                return "".ljust(cidr, "1").ljust(32, "0").scan(/\d{8}/).collect!{|b| b.to_i(2).to_s}.join(".")
             end
-
-        #================ DATA ACCESS ==================
-
-            def getOnWindowsWMI
-                #TODO - Get newtwork nterfaces from WMI (On Windows)
-        	end
     end
 end
