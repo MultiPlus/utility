@@ -8,6 +8,8 @@ i = Network::Interface.new(
    :gateway => "129.181.185.254"
 )
 
-puts i.inspect
+#puts i.inspect
 
-puts Network::Interface.isValideIPv4("5.168.0.1")
+#puts Network::Interface.isValideIPv4("5.168.0.1")
+
+Network::Interface.get_local_interfaces()[0].print_network_device()

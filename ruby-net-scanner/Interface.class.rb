@@ -12,8 +12,8 @@ module Network
    #    http://rdoc.sourceforge.net/doc/index.html
 
     class Interface
-        @@MASK_IP   = 1
-        @@MASK_ICDR = 2
+        MASK_IP   = 1
+        MASK_ICDR = 2
 
         attr_accessor :ipv4, :ipv6, :mac, :mask_ip, :mask_icdr, :gateway
 
@@ -43,7 +43,7 @@ module Network
 
             def mac=(mac)
                 raise(ArgumentError, 'Argument mac must be a valid MAC address (Tolered delimiter :,-).') if !Interface.mac?(mac)
-                @ipv6 = ipv6
+                @mac = mac
             end
 
             def gateway=(gateway)
@@ -52,8 +52,8 @@ module Network
             end
 
             def mask=(mask)
-                if (mask.is_a? Integer)
-                    raise(ArgumentError, 'Argument mask must be a valid ICDR mask.') if !Interface.mask?(mask, Interface.MASK_ICDR)
+                if (mask.is_a? Integer) || (mask==mask.to_i.to_s)
+                    raise(ArgumentError, 'Argument mask must be a valid ICDR mask.') if !Interface.mask?(mask.to_i, Interface.MASK_ICDR)
                     @mask_icdr = mask
                     @mask_ip = Interface.cidr_to_ip(mask)
                 else
@@ -95,7 +95,7 @@ module Network
                     when MASK_IP
                          return Interface.ipv4?(mask) && mask.split(".").collect!{|i| i.to_i.to_s(2)}.join().index('01').nil?
                     else
-                        return (mask<1 || mask>32)
+                        return (mask.to_i<1 || mask.to_i>32)
                 end
                
             end
@@ -115,6 +115,113 @@ module Network
             #Convert a mask CIDR IP to  format (24 => 255.255.255.0)
             def self.cidr_to_ip(cidr)
                 return "".ljust(cidr, "1").ljust(32, "0").scan(/\d{8}/).collect!{|b| b.to_i(2).to_s}.join(".")
+            end
+
+            def self.get_local_interfaces()
+                require_relative 'mod-OS'
+                if OS.windows?
+                    return get_local_interfaces_windows()
+                elsif OS.linux?
+                    return get_local_interfaces_linux()
+                end
+            end
+
+            def self.get_local_interfaces_windows()
+                require 'win32ole'
+                interfaces = Array.new
+                wmi = WIN32OLE.connect("winmgmts://")
+
+                #http://msdn.microsoft.com/en-us/library/aa394217%28v=vs.85%29.aspx
+                connections = wmi.ExecQuery("SELECT * FROM Win32_NetworkAdapterConfiguration Where IPEnabled = True")
+                for connection in connections do
+                    interface = Network::Interface.new(
+                        :ipv4 => connection.IPAddress.first,
+                        :mask => connection.IPSubnet.first,
+                        :mac => "D4:BE:D9:98:C4:73",
+                        :gateway => "129.181.185.254"
+                    )
+                    interfaces.push(interface)
+                end
+                return interfaces
+            end
+
+            def self.get_local_interfaces_linux()
+                interfaces = Array.new
+                `ip -o addr show | grep -v ": lo" | awk '/inet/ {print $4}'`.split("\n").each{|connection|
+                    interface = Network::Interface.new(
+                        :ipv4 => connection,
+                        :mac => "D4:BE:D9:98:C4:73",
+                        :gateway => "129.181.185.254"
+                    )
+                    interfaces.push(interface)
+                }
+                return interfaces
+            end
+
+            def self.get_info_from_ip(ip)
+                require_relative 'mod-OS'
+                if OS.windows?
+                    return get_info_from_ip_windows(ip)
+                elsif OS.linux?
+                    return get_info_from_ip_linux(ip)
+                end
+                return nil
+            end
+
+            def self.get_info_from_ip_windows(ip)
+                info = Hash.new
+                count = 1   #Stop after sending count ECHO_REQUEST packets. With deadline option, ping waits for count ECHO_REPLY packets, until the timeout expires. 
+                timeout = 1 #Time to wait for a response, in seconds. The option affects only timeout in absense of any responses, otherwise ping waits for two RTTs.
+                info[:ping] = system("ping -w #{timeout} -n #{count} #{ip}",
+                               [:err, :out] => "NUL")
+                if info[:ping]
+                    require 'resolv'
+                    info[:name] = Resolv.getname(ip) rescue nil
+                end
+                return info
+            end
+
+            def self.get_info_from_ip_linux(ip)
+                info = Hash.new
+                count = 1   #Stop after sending count ECHO_REQUEST packets. With deadline option, ping waits for count ECHO_REPLY packets, until the timeout expires. 
+                timeout = 1 #Time to wait for a response, in seconds. The option affects only timeout in absense of any responses, otherwise ping waits for two RTTs.
+                #-q: Quiet output. Nothing is displayed except the summary lines at startup time and when finished. 
+                info[:ping] = system("ping -q -W #{timeout} -c #{count} #{ip}",
+                   [:err, :out] => "/dev/null")
+                if info[:ping]
+                    require 'resolv'
+                    info[:name] = Resolv.getname(ip) rescue nil
+                end
+                return info
+            end
+
+            def print_network_device()
+                require 'ipaddr'
+                used_ip = IPAddr.new "#{self.ipv4}/#{self.mask}"
+                range = used_ip.to_range().to_a
+                range.shift #delete first IP (0.0) (No valid)
+                range.pop   #Delete last IP broadcast (No valid)
+                puts "Scan local network for #{range.first} to #{range.last}:"
+
+                #Create a thread by ping/ip
+                results = Hash.new
+                threads = Array.new
+                range.each{|ip|
+                    threads.push(Thread.new{
+                        results[ip.to_s] = Interface.get_info_from_ip(ip.to_s)
+                    })
+                }
+                #Wait End of all Threads to continue
+                threads.each{|t|t.join}
+
+                results = results.reject{|k,v| !v[:ping]}
+
+                puts "You have actualy #{results.count} device(s) with a IP on your network: "
+                results.each{|ip, info|
+                    if info[:ping]
+                        puts "\t- #{ip} [#{info[:name]}]"
+                    end
+                }
             end
     end
 end
