@@ -137,8 +137,8 @@ module Network
                     interface = Network::Interface.new(
                         :ipv4 => connection.IPAddress.first,
                         :mask => connection.IPSubnet.first,
-                        :mac => "D4:BE:D9:98:C4:73",
-                        :gateway => "129.181.185.254"
+                        :mac => connection.MACAddress,
+                        :gateway => connection.DefaultIPGateway.first
                     )
                     interfaces.push(interface)
                 end
