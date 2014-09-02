@@ -109,10 +109,10 @@ module Network
 
             # to-s function for Instance object
             def to_s
-                puts "ipv4 : #{self.ipv4}"
-                puts "mask : #{self.mask}"
-                puts "mac : #{self.mask}"
-                puts "gateway : #{self.gateway}"
+                return "ipv4 : #{self.ipv4}\n" <<
+                "mask : #{self.mask}\n" <<
+                "mac : #{self.mask}\n" <<
+                "gateway : #{self.gateway}\n"
             end
 
             #Convert a mask IP to CIDR format (255.255.255.0 => 24)
