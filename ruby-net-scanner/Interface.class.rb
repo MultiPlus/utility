@@ -107,6 +107,7 @@ module Network
 
         #================ METHODS ==================
 
+
             #Convert a mask IP to CIDR format (255.255.255.0 => 24)
             def self.ip_to_cidr(ip)
                 return ip.split(".").collect!{|i|i.to_i.to_s(2)}.join().count('1')
@@ -134,11 +135,16 @@ module Network
                 #http://msdn.microsoft.com/en-us/library/aa394217%28v=vs.85%29.aspx
                 connections = wmi.ExecQuery("SELECT * FROM Win32_NetworkAdapterConfiguration Where IPEnabled = True")
                 for connection in connections do
+                        # Check if all parameters are not null
+                        ipv4 = connection.IPAddress.first if not connection.IPAddress.nil?
+                        mask = connection.IPSubnet.first if not connection.IPSubnet.nil?
+                        mac = connection.MACAddress if not connection.MACAddress.nil?
+                        gateway = connection.DefaultIPGateway.first if not connection.DefaultIPGateway.nil?
                     interface = Network::Interface.new(
-                        :ipv4 => connection.IPAddress.first,
-                        :mask => connection.IPSubnet.first,
-                        :mac => connection.MACAddress,
-                        :gateway => connection.DefaultIPGateway.first
+                        :ipv4 => ipv4,
+                        :mask => mask,
+                        :mac => mac,
+                        :gateway => gateway
                     )
                     interfaces.push(interface)
                 end
