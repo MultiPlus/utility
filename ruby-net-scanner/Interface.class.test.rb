@@ -12,20 +12,4 @@ i = Network::Interface.new(
 
 #puts Network::Interface.isValideIPv4("5.168.0.1")
 
-#Network::Interface.get_local_interfaces()[0].print_network_device()
-
-# Lance le Interface.to_s mais aussi le puts de l'objet (j'ai l'impression)
-puts Network::Interface.get_local_interfaces()[0]
-puts "==============================================="
-
-# Lance le Interface.to_s mais aussi le print de l'objet (j'ai l'impression)
-print Network::Interface.get_local_interfaces()[0]
-puts "==============================================="
-
-# Force le lancement de Interface.to_s, le puts natif n'est plus affiché
-puts Network::Interface.get_local_interfaces()[0].to_s
-puts "==============================================="
-
-# Force le lancement de Interface.to_s, le print natif n'est plus affiché
-print Network::Interface.get_local_interfaces()[0].to_s
-puts "==============================================="
+Network::Interface.get_local_interfaces()[0].print_network_device()

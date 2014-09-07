@@ -13,9 +13,9 @@ module Network
 
     class Interface
         MASK_IP   = 1
-        MASK_ICDR = 2
+        MASK_CIDR = 2
 
-        attr_accessor :ipv4, :ipv6, :mac, :mask_ip, :mask_icdr, :gateway
+        attr_accessor :ipv4, :ipv6, :mac, :mask_ip, :mask_cidr, :gateway
 
         def initialize(params = {})
             if (params[:ipv4].count('/') == 1)
@@ -53,13 +53,13 @@ module Network
 
             def mask=(mask)
                 if (mask.is_a? Integer) || (mask==mask.to_i.to_s)
-                    raise(ArgumentError, 'Argument mask must be a valid ICDR mask.') if !Interface.mask?(mask.to_i, Interface.MASK_ICDR)
-                    @mask_icdr = mask
-                    @mask_ip = Interface.cidr_to_ip(mask)
+                    raise(ArgumentError, 'Argument mask must be a valid CIDR mask.') if !Interface.mask?(mask.to_i, Interface::MASK_CIDR)
+                    @mask_cidr = mask.to_i
+                    @mask_ip = Interface.cidr_to_ip(mask.to_i)
                 else
-                    raise(ArgumentError, 'Argument mask must be a valid IP V4 mask.') if !Interface.mask?(mask)
+                    raise(ArgumentError, 'Argument mask must be a valid IP V4 mask.') if !Interface.mask?(mask, Interface::MASK_IP)
                     @mask_ip = mask
-                    @mask_icdr = Interface.ip_to_cidr(mask)
+                    @mask_cidr = Interface.ip_to_cidr(mask)
                 end
             end
 
@@ -67,13 +67,13 @@ module Network
 
             #Get mask of interface with specifed format 
             # Inteface::MASK_IP = 1 (default)
-            # Inteface::MASK_ICDR = 2
+            # Inteface::MASK_CIDR = 2
             def mask(type = MASK_IP)
                 case :type
                     when MASK_IP
                         return @mask_ip
                     else
-                        return @mask_icdr
+                        return @mask_cidr
                 end
             end
 
@@ -91,11 +91,11 @@ module Network
 
             #Valide a string is a IPv4 Mask format
             def self.mask?(mask, type = MASK_IP)
-                case :type
-                    when MASK_IP
-                         return Interface.ipv4?(mask) && mask.split(".").collect!{|i| i.to_i.to_s(2)}.join().index('01').nil?
+                case type
+                    when Interface::MASK_IP
+                        return Interface.ipv4?(mask) && mask.split(".").collect!{|i| i.to_i.to_s(2)}.join().index('01').nil?
                     else
-                        return (mask.to_i<1 || mask.to_i>32)
+                        return (mask.to_i>0 && mask.to_i<33)
                 end
                
             end
