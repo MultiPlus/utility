@@ -14,6 +14,7 @@ module Network
     class Interface
         MASK_IP   = 1
         MASK_CIDR = 2
+        MASK_HEX = 3
 
         attr_accessor :ipv4, :ipv6, :mac, :mask_ip, :mask_cidr, :gateway
 
@@ -56,10 +57,17 @@ module Network
                     raise(ArgumentError, 'Argument mask must be a valid CIDR mask.') if !Interface.mask?(mask.to_i, Interface::MASK_CIDR)
                     @mask_cidr = mask.to_i
                     @mask_ip = Interface.cidr_to_ip(mask.to_i)
+                    @mask_hex = Interface.cidr_to_hex(mask.to_s)
+                elsif mask.to_s.start_with?("0x")
+                    raise(ArgumentError, 'Argument mask must be a valid HEX mask.') if !Interface.mask?(mask, Interface::MASK_HEX)
+                    @mask_ip = Interface.hex_to_ip(mask.to_s)
+                    @mask_cidr = Interface.hex_to_cidr(mask.to_s)
+                    @mask_hex = mask.to_s
                 else
                     raise(ArgumentError, 'Argument mask must be a valid IP V4 mask.') if !Interface.mask?(mask, Interface::MASK_IP)
                     @mask_ip = mask
                     @mask_cidr = Interface.ip_to_cidr(mask)
+                    @mask_hex = Interface.ip_to_hex(mask)
                 end
             end
 
@@ -120,9 +128,29 @@ module Network
                 return ip.split(".").collect!{|i|i.to_i.to_s(2)}.join().count('1')
             end
 
-            #Convert a mask CIDR IP to  format (24 => 255.255.255.0)
+            #Convert a mask IP to HEXA format (255.255.255.0 => 0xffffff00)
+            def self.ip_to_hex(ip)
+                return nil
+            end
+
+            #Convert a mask CIDR to IP format (24 => 255.255.255.0)
             def self.cidr_to_ip(cidr)
                 return "".ljust(cidr, "1").ljust(32, "0").scan(/\d{8}/).collect!{|b| b.to_i(2).to_s}.join(".")
+            end
+
+            #Convert a mask CIDR to HEXA format (24 => 0xffffff00)
+            def self.cidr_to_hex(cidr)
+                return nil
+            end
+
+            #Convert a mask HEXA to CIDR format (0xffffff00 => 24)
+            def self.hex_to_cidr(hex)
+                return nil
+            end
+
+            #Convert a mask HEXA to IP format (0xffffff00 => 255.255.255.0)
+            def self.hex_to_ip(hex)
+                return hex.to_s(2).count('1')
             end
 
             def self.get_local_interfaces()
@@ -131,6 +159,8 @@ module Network
                     return get_local_interfaces_windows()
                 elsif OS.linux?
                     return get_local_interfaces_linux()
+                elsif OS.mac?
+                    return get_local_interfaces_macos()
                 end
             end
 
@@ -161,6 +191,19 @@ module Network
             def self.get_local_interfaces_linux()
                 interfaces = Array.new
                 `ip -o addr show | grep -v ": lo" | awk '/inet/ {print $4}'`.split("\n").each{|connection|
+                    interface = Network::Interface.new(
+                        :ipv4 => connection,
+                        :mac => "D4:BE:D9:98:C4:73",
+                        :gateway => "129.181.185.254"
+                    )
+                    interfaces.push(interface)
+                }
+                return interfaces
+            end
+
+            def self.get_local_interfaces_macos()
+                interfaces = Array.new
+                `ifconfig | grep -v inet6 | awk '/inet/ {print $2"/"$4}' | grep -v "127.0.0.1"`.split("\n").each{|connection|
                     interface = Network::Interface.new(
                         :ipv4 => connection,
                         :mac => "D4:BE:D9:98:C4:73",
