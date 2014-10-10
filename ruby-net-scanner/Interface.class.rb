@@ -57,17 +57,14 @@ module Network
                     raise(ArgumentError, 'Argument mask must be a valid CIDR mask.') if !Interface.mask?(mask.to_i, Interface::MASK_CIDR)
                     @mask_cidr = mask.to_i
                     @mask_ip = Interface.cidr_to_ip(mask.to_i)
-                    @mask_hex = Interface.cidr_to_hex(mask.to_s)
                 elsif mask.to_s.start_with?("0x")
                     raise(ArgumentError, 'Argument mask must be a valid HEX mask.') if !Interface.mask?(mask, Interface::MASK_HEX)
-                    @mask_ip = Interface.hex_to_ip(mask.to_s)
-                    @mask_cidr = Interface.hex_to_cidr(mask.to_s)
-                    @mask_hex = mask.to_s
+                    @mask_ip = Interface.cidr_to_ip(Interface.hex_to_cidr(mask))
+                    @mask_cidr = Interface.hex_to_cidr(mask)
                 else
                     raise(ArgumentError, 'Argument mask must be a valid IP V4 mask.') if !Interface.mask?(mask, Interface::MASK_IP)
                     @mask_ip = mask
                     @mask_cidr = Interface.ip_to_cidr(mask)
-                    @mask_hex = Interface.ip_to_hex(mask)
                 end
             end
 
@@ -80,6 +77,8 @@ module Network
                 case :type
                     when MASK_IP
                         return @mask_ip
+                    when MASK_HEX
+                        return @mask_hex
                     else
                         return @mask_cidr
                 end
@@ -102,6 +101,8 @@ module Network
                 case type
                     when Interface::MASK_IP
                         return Interface.ipv4?(mask) && mask.split(".").collect!{|i| i.to_i.to_s(2)}.join().index('01').nil?
+                    when Interface::MASK_HEX
+                        return (mask =~ /^(0x[08cefCEF]{8})$/)==0
                     else
                         return (mask.to_i>0 && mask.to_i<33)
                 end
@@ -128,29 +129,14 @@ module Network
                 return ip.split(".").collect!{|i|i.to_i.to_s(2)}.join().count('1')
             end
 
-            #Convert a mask IP to HEXA format (255.255.255.0 => 0xffffff00)
-            def self.ip_to_hex(ip)
-                return nil
-            end
-
             #Convert a mask CIDR to IP format (24 => 255.255.255.0)
             def self.cidr_to_ip(cidr)
                 return "".ljust(cidr, "1").ljust(32, "0").scan(/\d{8}/).collect!{|b| b.to_i(2).to_s}.join(".")
             end
 
-            #Convert a mask CIDR to HEXA format (24 => 0xffffff00)
-            def self.cidr_to_hex(cidr)
-                return nil
-            end
-
-            #Convert a mask HEXA to CIDR format (0xffffff00 => 24)
-            def self.hex_to_cidr(hex)
-                return nil
-            end
-
             #Convert a mask HEXA to IP format (0xffffff00 => 255.255.255.0)
-            def self.hex_to_ip(hex)
-                return hex.to_s(2).count('1')
+            def self.hex_to_cidr(hex)
+                return hex.to_i(16).to_s(2).count('1')
             end
 
             def self.get_local_interfaces()
@@ -220,6 +206,8 @@ module Network
                     return get_info_from_ip_windows(ip)
                 elsif OS.linux?
                     return get_info_from_ip_linux(ip)
+                elsif OS.mac?
+                    return get_info_from_ip_macos(ip)
                 end
                 return nil
             end
@@ -238,6 +226,20 @@ module Network
             end
 
             def self.get_info_from_ip_linux(ip)
+                info = Hash.new
+                count = 1   #Stop after sending count ECHO_REQUEST packets. With deadline option, ping waits for count ECHO_REPLY packets, until the timeout expires. 
+                timeout = 1 #Time to wait for a response, in seconds. The option affects only timeout in absense of any responses, otherwise ping waits for two RTTs.
+                #-q: Quiet output. Nothing is displayed except the summary lines at startup time and when finished. 
+                info[:ping] = system("ping -q -W #{timeout} -c #{count} #{ip}",
+                   [:err, :out] => "/dev/null")
+                if info[:ping]
+                    require 'resolv'
+                    info[:name] = Resolv.getname(ip) rescue nil
+                end
+                return info
+            end
+
+            def self.get_info_from_ip_macos(ip)
                 info = Hash.new
                 count = 1   #Stop after sending count ECHO_REQUEST packets. With deadline option, ping waits for count ECHO_REPLY packets, until the timeout expires. 
                 timeout = 1 #Time to wait for a response, in seconds. The option affects only timeout in absense of any responses, otherwise ping waits for two RTTs.
