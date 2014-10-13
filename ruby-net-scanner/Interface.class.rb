@@ -249,6 +249,7 @@ module Network
                 if info[:ping]
                     require 'resolv'
                     info[:name] = Resolv.getname(ip) rescue nil
+                    info[:mac] = `arp -a | grep "(#{ip})" | awk '{print $4}'`.strip
                 end
                 return info
             end
@@ -277,7 +278,7 @@ module Network
                 puts "You have actualy #{results.count} device(s) with a IP on your network: "
                 results.each{|ip, info|
                     if info[:ping]
-                        puts "\t- #{ip} [#{info[:name]}]"
+                        puts "\t- #{ip} : [#{info[:name]}] : [#{info[:mac]}]"
                     end
                 }
             end
