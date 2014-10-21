@@ -235,6 +235,7 @@ module Network
                 if info[:ping]
                     require 'resolv'
                     info[:name] = Resolv.getname(ip) rescue nil
+                    info[:mac] = `arp | grep "#{ip} " | awk '{print $3}'`.strip
                 end
                 return info
             end
