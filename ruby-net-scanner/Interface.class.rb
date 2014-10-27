@@ -11,6 +11,9 @@ module Network
    # Using RDOC - Ruby Documentation System
    #    http://rdoc.sourceforge.net/doc/index.html
 
+    #sudo apt-get install libxslt-dev libxml2-dev
+    #sudo gem install nokogiri
+
     class Interface
         MASK_IP   = 1
         MASK_CIDR = 2
@@ -257,6 +260,7 @@ module Network
 
             def print_network_device()
                 require 'ipaddr'
+                @doc=open_xml_file("devices.xml")
                 used_ip = IPAddr.new "#{self.ipv4}/#{self.mask}"
                 range = used_ip.to_range().to_a
                 range.shift #delete first IP (0.0) (No valid)
@@ -276,12 +280,52 @@ module Network
 
                 results = results.reject{|k,v| !v[:ping]}
 
-                puts "You have actualy #{results.count} device(s) with a IP on your network: "
+                puts "You have #{results.count} device(s) with a IP on your network: "
                 results.each{|ip, info|
                     if info[:ping]
                         puts "\t- #{ip} : [#{info[:name]}] : [#{info[:mac]}]"
+                        if (@doc.search("//device[ip=\"#{ip}\"]").to_s.length == 0)
+
+                            devices=@doc.css("devices").first
+
+                            device = Nokogiri::XML::Node.new "device", @doc
+                            iptag = Nokogiri::XML::Node.new "ip", @doc
+                            nametag = Nokogiri::XML::Node.new "name", @doc
+                            mactag = Nokogiri::XML::Node.new "mac", @doc
+
+                            iptag.content = ip
+                            nametag.content = info[:name]
+                            mactag.content = info[:mac]
+
+                            device.add_child(iptag)
+                            device.add_child(nametag)
+                            device.add_child(mactag)
+
+                            devices.add_child(device)
+                        end
                     end
                 }
+                f=File.open("devices.xml", "w+")
+                f.write(@doc.to_xml)
+                f.close
+            end
+
+            def open_xml_file(filename)
+                require 'nokogiri' 
+                if File.file?(filename)
+                    f=File.open(filename)
+                    @doc=Nokogiri::XML(f)
+                    f.close
+                else
+                    f=File.open(filename, "w")
+                    @doc = Nokogiri::XML(f)
+                    f.close
+                    root = Nokogiri::XML::Node.new "root", @doc
+                    devices = Nokogiri::XML::Node.new "devices", @doc
+                    @doc.add_child(root)
+                    root.add_child(devices)
+                end
+                return @doc
             end
     end
 end
