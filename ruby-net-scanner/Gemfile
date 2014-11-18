@@ -1,5 +1,0 @@
-source 'https://rubygems.org'
-
-#List here all required gems for "net-scanner" program
-#Requires gem "bundler" to work
-#Samples & Documentation => http://bundler.io/
